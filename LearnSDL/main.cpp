@@ -48,7 +48,7 @@ bool loadMedia()
 	// Loading success flag
 	bool success = true;
 	//Load splash image º”‘ÿ∆Ù∂Øª≠√Ê
-	string path = "../Resource/Hello.bmp";
+	string path = "../Resource/x.bmp";
 	gHelloWorld = SDL_LoadBMP(path.c_str());
 	if (gHelloWorld == NULL)
 	{
@@ -85,12 +85,29 @@ int main(int argc, char* args[])
 		}
 		else
 		{
-			// Apply the image
-			SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
-			//Update the surface
-			SDL_UpdateWindowSurface(gWindow);
-			//Wait two seconds
-			SDL_Delay(2000);
+			//Main loop flag
+			bool quit = false;
+
+			//Event handler
+			SDL_Event e;
+
+			//While application is running
+			while (!quit)
+			{
+				//Handle events on queue
+				while (SDL_PollEvent(&e) != 0)
+				{
+					//User requests quit
+					if (e.type == SDL_QUIT)
+					{
+						quit = true;
+					}
+				}
+				// Apply the image
+				SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+				//Update the surface
+				SDL_UpdateWindowSurface(gWindow);
+			}
 		}
 	}
 	// Free resources and close SDL
