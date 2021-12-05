@@ -1,9 +1,9 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
-#include "LTexture.h"
+#include "SDL/SDL_mixer.h"
 #include <iostream>
 #include <string>
-#include "LButton.h"
+#include "LTexture.h"
 using namespace std;
 
 //Screen dimension constants
@@ -16,19 +16,21 @@ void close();// Frees media and shuts down SDL
 
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL; // The window renderer
+LTexture gPromptTexture; // Scene texture
+//The music that will be played
+Mix_Music* gMusic = NULL;
 
-//Scene textures
-LTexture gPressTexture;
-LTexture gUpTexture;
-LTexture gDownTexture;
-LTexture gLeftTexture;
-LTexture gRightTexture;
+//The sound effects that will be used
+Mix_Chunk* gScratch = NULL;
+Mix_Chunk* gHigh = NULL;
+Mix_Chunk* gMedium = NULL;
+Mix_Chunk* gLow = NULL;
 
 bool init()
 {
 	bool success = true; // Initialization flag
 	//Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 	{
 		cout << "SDL could not initialize! SDL_Error: " << SDL_GetError() << endl;
 		success = false;
@@ -69,6 +71,12 @@ bool init()
 					cout << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << endl;
 					success = false;
 				}
+
+				//Initialize SDL_mixer
+				if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+				{
+					cout << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << endl;
+				}
 			}
 		}
 	}
@@ -79,39 +87,49 @@ bool loadMedia()
 {
 	// Loading success flag
 	bool success = true;
-	
-	//Load press texture
+
+	//Load prompt texture
 	string path = "../Resource/";
-	if (!gPressTexture.loadFromFile(path + "press.png"))
+	if (!gPromptTexture.loadFromFile(path + "prompt.png"))
 	{
-		cout << "Failed to load press texture!" << endl;
-		success = false;
-	}
-	//Load up texture
-	if (!gUpTexture.loadFromFile(path + "up.png"))
-	{
-		cout << "Failed to load up texture!" << endl;
+		cout << "Failed to load prompt texture!" << endl;
 		success = false;
 	}
 
-	//Load down texture
-	if (!gDownTexture.loadFromFile(path + "down.png"))
+	//Load music
+	gMusic = Mix_LoadMUS((path + "beat.wav").c_str());
+	if (gMusic == NULL)
 	{
-		cout << "Failed to load down texture!" << endl;
+		cout << "Failed to load beat music! SDL_mixer Error: " << Mix_GetError() << endl;
 		success = false;
 	}
 
-	//Load left texture
-	if (!gLeftTexture.loadFromFile(path + "left.png"))
+	//Load sound effects
+	gScratch = Mix_LoadWAV((path + "scratch.wav").c_str());
+	if (gScratch == NULL)
 	{
-		cout << "Failed to load left texture!" << endl;
+		cout << "Failed to load scratch sound effect! SDL_mixer Error: " << Mix_GetError() << endl;
+		success = false;
+	}
+	
+	gHigh = Mix_LoadWAV((path + "high.wav").c_str());
+	if (gHigh == NULL)
+	{
+		cout << "Failed to load high sound effect! SDL_mixer Error: " << Mix_GetError() << endl;
 		success = false;
 	}
 
-	//Load right texture
-	if (!gRightTexture.loadFromFile(path + "right.png"))
+	gMedium = Mix_LoadWAV((path + "medium.wav").c_str());
+	if (gMedium == NULL)
 	{
-		cout << "Failed to load right texture!" << endl;
+		cout << "Failed to load medium sound effect! SDL_mixer Error: " << Mix_GetError() << endl;
+		success = false;
+	}
+
+	gLow = Mix_LoadWAV((path + "low.wav").c_str());
+	if (gLow == NULL)
+	{
+		cout << "Failed to load low sound effect! SDL_mixer Error: " << Mix_GetError() << endl;
 		success = false;
 	}
 
@@ -121,11 +139,21 @@ bool loadMedia()
 void close()
 {
 	//Free loaded image
-	gPressTexture.free();
-	gUpTexture.free();
-	gDownTexture.free();
-	gLeftTexture.free();
-	gRightTexture.free();
+	gPromptTexture.free();
+
+	//Free the sound effects
+	Mix_FreeChunk(gScratch);
+	Mix_FreeChunk(gHigh);
+	Mix_FreeChunk(gMedium);
+	Mix_FreeChunk(gLow);
+	gScratch = NULL;
+	gHigh = NULL;
+	gMedium = NULL;
+	gLow = NULL;
+
+	//Free the music 
+	Mix_FreeMusic(gMusic);
+	gMusic = NULL;
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -134,6 +162,7 @@ void close()
 	gRenderer = NULL;
 
 	//Quit SDL subsystems
+	Mix_Quit();
 	IMG_Quit();
 	SDL_Quit();
 }
@@ -160,10 +189,6 @@ int main(int argc, char* args[])
 			//Event handler
 			SDL_Event e;
 
-			//Current rendered texture
-			LTexture* currentTexture = NULL;
-
-
 			//While application is running
 			while (!quit)
 			{
@@ -175,37 +200,60 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
+					else if (e.type == SDL_KEYDOWN)
+					{
+						switch (e.key.keysym.sym)
+						{
+						case SDLK_1:
+							Mix_PlayChannel(-1, gHigh, 0);
+							break;
+
+							//Play medium sound effect
+						case SDLK_2:
+							Mix_PlayChannel(-1, gMedium, 0);
+							break;
+
+							//Play low sound effect
+						case SDLK_3:
+							Mix_PlayChannel(-1, gLow, 0);
+							break;
+
+							//Play scratch sound effect
+						case SDLK_4:
+							Mix_PlayChannel(-1, gScratch, 0);
+							break;
+
+						case SDLK_9:
+							if (Mix_PlayingMusic() == 0)
+							{
+								Mix_PlayMusic(gMusic, -1);
+							}
+							else
+							{
+								if (Mix_PausedMusic() == 1)
+								{
+									Mix_ResumeMusic();
+								}
+								else
+								{
+									Mix_PauseMusic();
+								}
+							}
+							break;
+						case SDLK_0:
+							Mix_HaltMusic();
+							break;
+						}
+					}
 				}
 
-				//Set texture based on current key state
-				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-				if (currentKeyStates[SDL_SCANCODE_UP])
-				{
-					currentTexture = &gUpTexture;
-				}
-				else if (currentKeyStates[SDL_SCANCODE_DOWN])
-				{
-					currentTexture = &gDownTexture;
-				}
-				else if (currentKeyStates[SDL_SCANCODE_LEFT])
-				{
-					currentTexture = &gLeftTexture;
-				}
-				else if (currentKeyStates[SDL_SCANCODE_RIGHT])
-				{
-					currentTexture = &gRightTexture;
-				}
-				else
-				{
-					currentTexture = &gPressTexture;
-				}
 
 				//Clear screen
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
 				//Render current texture
-				currentTexture->render(0, 0);
+				gPromptTexture.render(0, 0);
 
 				//Update screen
 				SDL_RenderPresent(gRenderer);
