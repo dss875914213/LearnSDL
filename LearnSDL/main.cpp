@@ -1,5 +1,6 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
+#include "LTexture.h"
 #include <iostream>
 #include <string>
 using namespace std;
@@ -14,8 +15,9 @@ void close();// Frees media and shuts down SDL
 SDL_Texture* loadTexture(string path);//Loads individual images as texture
 
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
-SDL_Renderer* gRenderer = NULL;	// The window renderer
-SDL_Texture* gTexture = NULL; // Current displayed texture
+SDL_Renderer* gRenderer = NULL; // The window renderer
+LTexture gFooTexture;	// Scene textures
+LTexture gBackgroundTexture; 
 
 bool init()
 {
@@ -68,14 +70,20 @@ bool loadMedia()
 	// Loading success flag
 	bool success = true;
 
-	// Load texture
+	// Load Foo's texture
 	string path = "../Resource/";
-	gTexture = loadTexture(path + "viewport.png");
-	if (gTexture == NULL)
+	if (!gFooTexture.loadFromFile(path+"foo.png"))
 	{
-		cout << "Failed to load texture image!" << endl;
+		cout << "Failed to load Foo' texture image!" << endl;
 		success = false;
 	}
+	//Load background texture
+	if (!gBackgroundTexture.loadFromFile(path + "background.png"))
+	{
+		cout << "Failed to load background texture image!" << endl;
+		success = false;
+	}
+
 	//Nothing to load
 	return success;
 }
@@ -83,8 +91,8 @@ bool loadMedia()
 void close()
 {
 	//Free loaded image
-	SDL_DestroyTexture(gTexture);
-	gTexture = NULL;
+	gFooTexture.free();
+	gBackgroundTexture.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -159,38 +167,11 @@ int main(int argc, char* args[])
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Top left corner viewport
-				SDL_Rect topLeftViewport;
-				topLeftViewport.x = 0;
-				topLeftViewport.y = 0;
-				topLeftViewport.w = SCREEN_WIDTH / 2;
-				topLeftViewport.h = SCREEN_HEIGHT / 2;
-				SDL_RenderSetViewport(gRenderer, &topLeftViewport);
+				//Render background texture to screen
+				gBackgroundTexture.render(0, 0);
 
-				//Render texture to screen
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-
-				//Top right viewport
-				SDL_Rect topRightViewport;
-				topRightViewport.x = SCREEN_WIDTH / 2;
-				topRightViewport.y = 0;
-				topRightViewport.w = SCREEN_WIDTH / 2;
-				topRightViewport.h = SCREEN_HEIGHT / 2;
-				SDL_RenderSetViewport(gRenderer, &topRightViewport);
-
-				//Render texture to screen
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-
-				//Bottom viewport
-				SDL_Rect bottomViewport;
-				bottomViewport.x = 0;
-				bottomViewport.y = SCREEN_HEIGHT / 2;
-				bottomViewport.w = SCREEN_WIDTH;
-				bottomViewport.h = SCREEN_HEIGHT / 2;
-				SDL_RenderSetViewport(gRenderer, &bottomViewport);
-
-				//Render texture to screen
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+				//Render Foo' to the screen
+				gFooTexture.render(240, 190);
 
 				//Update screen
 				SDL_RenderPresent(gRenderer);
