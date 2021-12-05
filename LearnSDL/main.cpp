@@ -15,9 +15,10 @@ void close();// Frees media and shuts down SDL
 
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL; // The window renderer
-//Scene sprites
-LTexture gModulatedTexute;
-LTexture gBackgroundTexture;
+//Walking animation
+const int WALKING_ANIMATION_FRAMES = 4;
+SDL_Rect gSpriteClips[WALKING_ANIMATION_FRAMES];
+LTexture gSpriteSheetTexture;
 
 bool init()
 {
@@ -41,7 +42,7 @@ bool init()
 		else
 		{
 			//Create renderer for window 
-			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 			if (gRenderer == NULL)
 			{
 				cout << "Renderer could not be created! SDL Error: " << SDL_GetError() << endl;
@@ -72,21 +73,33 @@ bool loadMedia()
 
 	// Load front alpha texture
 	string path = "../Resource/";
-	if (!gModulatedTexute.loadFromFile(path + "fadeout.png"))
+	if (!gSpriteSheetTexture.loadFromFile(path + "foo.png"))
 	{
 		cout << "Failed to load front texture!" << endl;
 		success = false;
 	}
 	else
 	{
-		//Set standard alpha blending
-		gModulatedTexute.setBlendMode(SDL_BLENDMODE_BLEND);
-	}
-	//Load background textur
-	if (!gBackgroundTexture.loadFromFile(path + "fadein.png"))
-	{
-		cout << "Failed to load background texture" << endl;
-		success = false;
+		//Set sprite clips
+		gSpriteClips[0].x = 0;
+		gSpriteClips[0].y = 0;
+		gSpriteClips[0].w = 64;
+		gSpriteClips[0].h = 205;
+
+		gSpriteClips[1].x = 64;
+		gSpriteClips[1].y = 0;
+		gSpriteClips[1].w = 64;
+		gSpriteClips[1].h = 205;
+
+		gSpriteClips[2].x = 128;
+		gSpriteClips[2].y = 0;
+		gSpriteClips[2].w = 64;
+		gSpriteClips[2].h = 205;
+
+		gSpriteClips[3].x = 196;
+		gSpriteClips[3].y = 0;
+		gSpriteClips[3].w = 64;
+		gSpriteClips[3].h = 205;
 	}
 
 	return success;
@@ -95,8 +108,7 @@ bool loadMedia()
 void close()
 {
 	//Free loaded image
-	gModulatedTexute.free();
-	gBackgroundTexture.free();
+	gSpriteSheetTexture.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -131,8 +143,8 @@ int main(int argc, char* args[])
 			//Event handler
 			SDL_Event e;
 
-			//Modulation components
-			Uint8 a = 255;
+			//Current animation frame
+			int frame = 0;
 
 			//While application is running
 			while (!quit)
@@ -145,35 +157,27 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
-					//On keypress change rgb values
-					else if (e.type == SDL_KEYDOWN)
-					{
-						if (e.key.keysym.sym == SDLK_w)
-						{
-							//Cap if over 255
-							a = a+32 > 255 ? 255 : a+32;
-						}
-						else if (e.key.keysym.sym == SDLK_s)
-						{
-							a = a-32 < 0 ? 0 : a-32;
-						}
-						cout << "a: " << int(a) << endl;
-					}
 				}
 
 				//Clear screen
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render background
-				gBackgroundTexture.render(0, 0);
-
-				//Modulate and render texture
-				gModulatedTexute.setAlpha(a);
-				gModulatedTexute.render(0, 0);
+				//Render current frame
+				SDL_Rect* currentClip = &gSpriteClips[frame / 4];
+				gSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 
 				//Update screen
 				SDL_RenderPresent(gRenderer);
+
+				//Go to next frame
+				++frame;
+
+				//Cycle animation
+				if (frame / 4 >= WALKING_ANIMATION_FRAMES)
+				{
+					frame = 0;
+				}
 			}
 		}
 	}
