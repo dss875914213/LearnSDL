@@ -11,6 +11,7 @@ public:
 	LTexture(); // Initialize variables
 	~LTexture(); // Deallocates memory
 	bool loadFromFile(string path); // Loads image at specified path
+	bool loadFromRenderedText(string textureText, SDL_Color textColor);// Creates image from font string
 	void free(); //Deallocates texture
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);//Set color modulation
 	void setBlendMode(SDL_BlendMode blending); // Set blending
