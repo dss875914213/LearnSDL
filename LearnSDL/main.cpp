@@ -11,11 +11,9 @@ const int SCREEN_HEIGHT = 480;
 bool init();// Starts up SDL and creates window
 bool loadMedia();// Loads media
 void close();// Frees media and shuts down SDL
-SDL_Texture* loadTexture(string path);
 
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL;	// The window renderer
-SDL_Texture* gTexture = NULL;// Current displayed texture
 
 bool init()
 {
@@ -28,11 +26,6 @@ bool init()
 	}
 	else
 	{
-		//Set texture filtering to linear
-		if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
-		{
-			cout << "warning: Linear texture filtering not enabled!" << endl;
-		}
 		// Create window 
 		gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 			SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
@@ -53,12 +46,13 @@ bool init()
 			else
 			{
 				//Initialize renderer color
-				SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
 				//Initialize PNG loading
 				int imgFlags = IMG_INIT_PNG;
 				if (!(IMG_Init(imgFlags) & imgFlags))
 				{
-					cout << "SDL_image could not initialize ! SDL_image Error: " << IMG_GetError() << endl;
+					printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
 					success = false;
 				}
 			}
@@ -67,52 +61,16 @@ bool init()
 	return success;
 }
 
-SDL_Texture* loadTexture(string path)
-{
-	//The final texture
-	SDL_Texture* newTexture = NULL;
-
-	// Load image at specified path
-	SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-	if (loadedSurface == NULL)
-	{
-		cout << "Unable to load image " << path << " ! SDL_image Error: " << IMG_GetError() << endl;
-	}
-	else
-	{
-		//Create texture from surface pixels
-		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-		if (newTexture == NULL)
-		{
-			cout << "Unable to create texture from " << path << "SDL Error: " << SDL_GetError() << endl;
-		}
-		//Get rid of old loaded surface
-		SDL_FreeSurface(loadedSurface);
-	}
-	return newTexture;
-}
-
 bool loadMedia()
 {
 	// Loading success flag
 	bool success = true;
-	string path = "../Resource/";
-	//Load PNG surface
-	gTexture = loadTexture(path + "texture.png");
-	if (gTexture == NULL)
-	{
-		cout << "Failed to load texture image!" << endl;
-		success = false;
-	}
+	//Nothing to load
 	return success;
 }
 
 void close()
 {
-	//Deallocate surface
-	SDL_DestroyTexture(gTexture);
-	gTexture = NULL;
-
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -159,11 +117,30 @@ int main(int argc, char* args[])
 				}
 
 				//Clear screen
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				// Renderer texture to screen
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-				
+				// Render red filled quad
+				SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+				SDL_RenderFillRect(gRenderer, &fillRect);
+
+				//Render green outlined quad
+				SDL_Rect outlineRect = { SCREEN_WIDTH / 6,SCREEN_HEIGHT / 6,SCREEN_WIDTH * 2 / 3,SCREEN_HEIGHT * 2 / 3 };
+				SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+				SDL_RenderDrawRect(gRenderer, &outlineRect);
+
+				//Draw blue horizontal line
+				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+				SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+
+				//Draw vertical line of yellow dots
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+				for (int i = 0; i < SCREEN_HEIGHT; i += 4)
+				{
+					SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
+				}
+
 				//Update screen
 				SDL_RenderPresent(gRenderer);
 			}
