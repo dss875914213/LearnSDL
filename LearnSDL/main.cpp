@@ -1,4 +1,5 @@
 #include "SDL/SDL.h"
+#include "SDL/SDL_image.h"
 #include <iostream>
 #include <string>
 using namespace std;
@@ -36,8 +37,18 @@ bool init()
 		}
 		else
 		{
-			//Get window surface
-			gScreenSurface = SDL_GetWindowSurface(gWindow);
+			//Initialize PNG loading
+			int imgFlags = IMG_INIT_PNG;
+			if (!(IMG_Init(imgFlags) & imgFlags))
+			{
+				cout << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << endl;
+				success = false;
+			}
+			else
+			{
+				//Get window surface
+				gScreenSurface = SDL_GetWindowSurface(gWindow);
+			}
 		}
 	}
 	return success;
@@ -48,10 +59,10 @@ SDL_Surface* loadSurface(string path)
 	// The final optimized image
 	SDL_Surface* optimizedSurface = NULL;
 	//Load image at specified path
-	SDL_Surface* loadedSurface = SDL_LoadBMP(path.c_str());
+	SDL_Surface* loadedSurface = IMG_Load(path.c_str());
 	if (loadedSurface == NULL)
 	{
-		cout << "Unable to load image " << path << "! SDL ERROR: " << SDL_GetError() << endl;
+		cout << "Unable to load image " << path << "! SDL_image ERROR: " << IMG_GetError() << endl;
 	}
 	else
 	{
@@ -73,7 +84,7 @@ bool loadMedia()
 	bool success = true;
 	string path = "../Resource/";
 	//Load default surface
-	gStretchedSurface = loadSurface(path + "stretch.bmp");
+	gStretchedSurface = loadSurface(path + "loaded.png");
 	if (gStretchedSurface == NULL)
 	{
 		cout << "Failed to load default image!" << endl;
