@@ -17,6 +17,7 @@ SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL; // The window renderer
 //Scene sprites
 LTexture gModulatedTexute;
+LTexture gBackgroundTexture;
 
 bool init()
 {
@@ -69,11 +70,22 @@ bool loadMedia()
 	// Loading success flag
 	bool success = true;
 
-	// Load Foo's texture
+	// Load front alpha texture
 	string path = "../Resource/";
-	if (!gModulatedTexute.loadFromFile(path + "colors.png"))
+	if (!gModulatedTexute.loadFromFile(path + "fadeout.png"))
 	{
-		cout << "Failed to load sprite sheet texture!" << endl;
+		cout << "Failed to load front texture!" << endl;
+		success = false;
+	}
+	else
+	{
+		//Set standard alpha blending
+		gModulatedTexute.setBlendMode(SDL_BLENDMODE_BLEND);
+	}
+	//Load background textur
+	if (!gBackgroundTexture.loadFromFile(path + "fadein.png"))
+	{
+		cout << "Failed to load background texture" << endl;
 		success = false;
 	}
 
@@ -84,6 +96,7 @@ void close()
 {
 	//Free loaded image
 	gModulatedTexute.free();
+	gBackgroundTexture.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -119,9 +132,7 @@ int main(int argc, char* args[])
 			SDL_Event e;
 
 			//Modulation components
-			Uint8 r = 255;
-			Uint8 g = 128;
-			Uint8 b = 255;
+			Uint8 a = 255;
 
 			//While application is running
 			while (!quit)
@@ -137,28 +148,16 @@ int main(int argc, char* args[])
 					//On keypress change rgb values
 					else if (e.type == SDL_KEYDOWN)
 					{
-						switch (e.key.keysym.sym)
+						if (e.key.keysym.sym == SDLK_w)
 						{
-						case SDLK_q:
-							r += 32;
-							break;
-						case SDLK_w:
-							g += 32;
-							break;
-						case SDLK_e:
-							b += 32;
-							break;
-						case SDLK_a:
-							r -= 32;
-							break;
-						case SDLK_s:
-							g -= 32;
-							break;
-						case SDLK_d:
-							b -= 32;
-							break;
+							//Cap if over 255
+							a = a+32 > 255 ? 255 : a+32;
 						}
-						cout << "r: " << int(r) << " , g: " << int(g) << " , b: " << int(b) << endl;
+						else if (e.key.keysym.sym == SDLK_s)
+						{
+							a = a-32 < 0 ? 0 : a-32;
+						}
+						cout << "a: " << int(a) << endl;
 					}
 				}
 
@@ -166,8 +165,11 @@ int main(int argc, char* args[])
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
+				//Render background
+				gBackgroundTexture.render(0, 0);
+
 				//Modulate and render texture
-				gModulatedTexute.setColor(r, g, b);
+				gModulatedTexute.setAlpha(a);
 				gModulatedTexute.render(0, 0);
 
 				//Update screen
