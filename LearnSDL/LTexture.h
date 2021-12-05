@@ -12,7 +12,8 @@ public:
 	~LTexture(); // Deallocates memory
 	bool loadFromFile(string path); // Loads image at specified path
 	void free(); //Deallocates texture
-	void render(int x, int y, SDL_Rect* clip); // Renders texture at given point
+	void setColor(Uint8 red, Uint8 green, Uint8 blue);//Set color modulation
+	void render(int x, int y, SDL_Rect* clip=NULL); // Renders texture at given point
 	int getWidth(); // Gets image dimensions
 	int getHeight();
 

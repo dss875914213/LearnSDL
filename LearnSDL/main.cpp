@@ -12,13 +12,11 @@ const int SCREEN_HEIGHT = 480;
 bool init();// Starts up SDL and creates window
 bool loadMedia();// Loads media
 void close();// Frees media and shuts down SDL
-SDL_Texture* loadTexture(string path);//Loads individual images as texture
 
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL; // The window renderer
 //Scene sprites
-SDL_Rect gSpriteClips[4];
-LTexture gSpriteSheetTexture;
+LTexture gModulatedTexute;
 
 bool init()
 {
@@ -57,7 +55,7 @@ bool init()
 				int imgFlags = IMG_INIT_PNG;
 				if (!(IMG_Init(imgFlags) & imgFlags))
 				{
-					printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+					cout<<"SDL_image could not initialize! SDL_image Error: "<< IMG_GetError()<<endl;
 					success = false;
 				}
 			}
@@ -73,37 +71,10 @@ bool loadMedia()
 
 	// Load Foo's texture
 	string path = "../Resource/";
-	if (!gSpriteSheetTexture.loadFromFile(path + "dots.png"))
+	if (!gModulatedTexute.loadFromFile(path + "colors.png"))
 	{
 		cout << "Failed to load sprite sheet texture!" << endl;
 		success = false;
-	}
-	else
-	{
-		// Set top left sprite
-		gSpriteClips[0].x = 0;
-		gSpriteClips[0].y = 0;
-		gSpriteClips[0].w = 100;
-		gSpriteClips[0].h = 100;
-
-		//Set top right sprite
-		gSpriteClips[1].x = 100;
-		gSpriteClips[1].y = 0;
-		gSpriteClips[1].w = 100;
-		gSpriteClips[1].h = 100;
-
-		//Set bottom left sprite
-		gSpriteClips[2].x = 0;
-		gSpriteClips[2].y = 100;
-		gSpriteClips[2].w = 100;
-		gSpriteClips[2].h = 100;
-
-		//Set bottom right sprite
-		gSpriteClips[3].x = 100;
-		gSpriteClips[3].y = 100;
-		gSpriteClips[3].w = 100;
-		gSpriteClips[3].h = 100;
-
 	}
 
 	return success;
@@ -112,7 +83,7 @@ bool loadMedia()
 void close()
 {
 	//Free loaded image
-	gSpriteSheetTexture.free();
+	gModulatedTexute.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -123,29 +94,6 @@ void close()
 	//Quit SDL subsystems
 	IMG_Quit();
 	SDL_Quit();
-}
-
-SDL_Texture* loadTexture(string path)
-{
-	SDL_Texture* newTexture = NULL;//The final texture
-	//Load image at specified path
-	SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-	if (loadedSurface == NULL)
-	{
-		cout << "Unable to load image " << path << "! SDL_image Error: " << IMG_GetError() << endl;
-	}
-	else
-	{
-		//Create texture from surface pixels
-		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-		if (newTexture == NULL)
-		{
-			cout << "Unable to create texture from " << path << "! SDL Error: " << IMG_GetError() << endl;
-		}
-		//Get rid of old loaded surface
-		SDL_FreeSurface(loadedSurface);
-	}
-	return newTexture;
 }
 
 int main(int argc, char* args[])
@@ -170,6 +118,11 @@ int main(int argc, char* args[])
 			//Event handler
 			SDL_Event e;
 
+			//Modulation components
+			Uint8 r = 255;
+			Uint8 g = 128;
+			Uint8 b = 255;
+
 			//While application is running
 			while (!quit)
 			{
@@ -181,23 +134,41 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
+					//On keypress change rgb values
+					else if (e.type == SDL_KEYDOWN)
+					{
+						switch (e.key.keysym.sym)
+						{
+						case SDLK_q:
+							r += 32;
+							break;
+						case SDLK_w:
+							g += 32;
+							break;
+						case SDLK_e:
+							b += 32;
+							break;
+						case SDLK_a:
+							r -= 32;
+							break;
+						case SDLK_s:
+							g -= 32;
+							break;
+						case SDLK_d:
+							b -= 32;
+							break;
+						}
+						cout << "r: " << int(r) << " , g: " << int(g) << " , b: " << int(b) << endl;
+					}
 				}
 
 				//Clear screen
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render top left sprite
-				gSpriteSheetTexture.render(0, 0, &gSpriteClips[0]);
-
-				//Render top right sprite
-				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[1].w, 0, &gSpriteClips[1]);
-
-				//Render bottom left sprite
-				gSpriteSheetTexture.render(0, SCREEN_HEIGHT - gSpriteClips[2].h, &gSpriteClips[2]);
-
-				//Render bottom right sprite
-				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[3].w, SCREEN_HEIGHT - gSpriteClips[3].h, &gSpriteClips[3]);
+				//Modulate and render texture
+				gModulatedTexute.setColor(r, g, b);
+				gModulatedTexute.render(0, 0);
 
 				//Update screen
 				SDL_RenderPresent(gRenderer);
