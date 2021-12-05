@@ -21,9 +21,15 @@
     <ClCompile Include="LTexture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="LButton.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LTexture.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LButton.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

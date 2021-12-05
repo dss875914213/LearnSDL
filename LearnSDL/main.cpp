@@ -1,14 +1,15 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
-#include "SDL/SDL_ttf.h"
 #include "LTexture.h"
 #include <iostream>
 #include <string>
+#include "LButton.h"
 using namespace std;
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
+
 
 bool init();// Starts up SDL and creates window
 bool loadMedia();// Loads media
@@ -16,8 +17,13 @@ void close();// Frees media and shuts down SDL
 
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL; // The window renderer
-TTF_Font* gFont = NULL; //Globally used font
-LTexture gTextTexture; // Rendered texture
+
+//Mouse button sprites
+SDL_Rect gSpriteClips[BUTTON_SPRITE_MOUSE_TOTAL];
+LTexture gButtonSpriteSheetTexture; // Rendered texture
+
+//Buttons objects
+LButton gButtons[TOTAL_BUTTONS];
 
 bool init()
 {
@@ -59,13 +65,6 @@ bool init()
 					cout << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << endl;
 					success = false;
 				}
-
-				//Initialize SDL_ttf
-				if (TTF_Init() == -1)
-				{
-					cout << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << endl;
-					success = false;
-				}
 			}
 		}
 	}
@@ -79,21 +78,27 @@ bool loadMedia()
 
 	// Open the font
 	string path = "../Resource/";
-	gFont = TTF_OpenFont((path + "lazy.ttf").c_str(), 28);
-	if (gFont == NULL)
+	if (!gButtonSpriteSheetTexture.loadFromFile(path+"button.png"))
 	{
-		cout << "Failed to load lazy font! SDL_ttf Error: " << TTF_GetError() << endl;
+		cout << "Failed to load button sprite texture! " << endl;
 		success = false;
 	}
 	else
 	{
-		//Render text
-		SDL_Color textColor = { 0,0,0 };
-		if (!gTextTexture.loadFromRenderedText("The quick brown fox jumps over the lazy dog", textColor))
+		//Set sprites
+		for (int i = 0; i < BUTTON_SPRITE_MOUSE_TOTAL; i++)
 		{
-			cout << "Failed to render text texture!" << endl;
-			success = false;
+			gSpriteClips[i].x = 0;
+			gSpriteClips[i].y = i * 200;
+			gSpriteClips[i].w = BUTTON_WIDTH;
+			gSpriteClips[i].h = BUTTON_HEIGHT;
 		}
+
+		//Set buttons in corners
+		gButtons[0].setPosition(0, 0);
+		gButtons[1].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, 0);
+		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
+		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
 	}
 
 	return success;
@@ -102,11 +107,7 @@ bool loadMedia()
 void close()
 {
 	//Free loaded image
-	gTextTexture.free();
-
-	//Free global font
-	TTF_CloseFont(gFont);
-	gFont = NULL;
+	gButtonSpriteSheetTexture.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -115,7 +116,6 @@ void close()
 	gRenderer = NULL;
 
 	//Quit SDL subsystems
-	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
 }
@@ -142,12 +142,6 @@ int main(int argc, char* args[])
 			//Event handler
 			SDL_Event e;
 
-			//Angle of rotation
-			double degrees = 0;
-
-			//Flip type
-			SDL_RendererFlip flipType = SDL_FLIP_NONE;
-
 			//While application is running
 			while (!quit)
 			{
@@ -159,14 +153,23 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
+
+					//Handle button events
+					for (int i = 0; i < TOTAL_BUTTONS; i++)
+					{
+						gButtons[i].handleEvent(&e);
+					}
 				}
 
 				//Clear screen
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render current frame
-				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
+				//Render buttons
+				for (int i = 0; i < TOTAL_BUTTONS; i++)
+				{
+					gButtons[i].render();
+				}
 
 				//Update screen
 				SDL_RenderPresent(gRenderer);

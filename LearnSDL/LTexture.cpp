@@ -1,8 +1,6 @@
 #include "LTexture.h"
-#include "SDL/SDL_ttf.h"
 
 extern SDL_Renderer* gRenderer;
-extern TTF_Font* gFont;
 
 
 LTexture::LTexture()
@@ -55,6 +53,7 @@ bool LTexture::loadFromFile(string path)
 	return mTexture != NULL;
 }
 
+#ifdef SDL_TTF_MAJOR_VERSION
 bool LTexture::loadFromRenderedText(string textureText, SDL_Color textColor)
 {
 	//Get rid of preexisting texture
@@ -87,6 +86,7 @@ bool LTexture::loadFromRenderedText(string textureText, SDL_Color textColor)
 	return mTexture != NULL;
 
 }
+#endif
 
 void LTexture::free()
 {
