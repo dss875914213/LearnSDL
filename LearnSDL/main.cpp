@@ -10,7 +10,6 @@ using namespace std;
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-
 bool init();// Starts up SDL and creates window
 bool loadMedia();// Loads media
 void close();// Frees media and shuts down SDL
@@ -18,12 +17,12 @@ void close();// Frees media and shuts down SDL
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL; // The window renderer
 
-//Mouse button sprites
-SDL_Rect gSpriteClips[BUTTON_SPRITE_MOUSE_TOTAL];
-LTexture gButtonSpriteSheetTexture; // Rendered texture
-
-//Buttons objects
-LButton gButtons[TOTAL_BUTTONS];
+//Scene textures
+LTexture gPressTexture;
+LTexture gUpTexture;
+LTexture gDownTexture;
+LTexture gLeftTexture;
+LTexture gRightTexture;
 
 bool init()
 {
@@ -36,6 +35,11 @@ bool init()
 	}
 	else
 	{
+		//Set texture filtering to linear
+		if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
+		{
+			cout << "Warning: Linear texture filtering not enabled!" << endl;
+		}
 		// Create window 
 		gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 			SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
@@ -75,30 +79,40 @@ bool loadMedia()
 {
 	// Loading success flag
 	bool success = true;
-
-	// Open the font
+	
+	//Load press texture
 	string path = "../Resource/";
-	if (!gButtonSpriteSheetTexture.loadFromFile(path+"button.png"))
+	if (!gPressTexture.loadFromFile(path + "press.png"))
 	{
-		cout << "Failed to load button sprite texture! " << endl;
+		cout << "Failed to load press texture!" << endl;
 		success = false;
 	}
-	else
+	//Load up texture
+	if (!gUpTexture.loadFromFile(path + "up.png"))
 	{
-		//Set sprites
-		for (int i = 0; i < BUTTON_SPRITE_MOUSE_TOTAL; i++)
-		{
-			gSpriteClips[i].x = 0;
-			gSpriteClips[i].y = i * 200;
-			gSpriteClips[i].w = BUTTON_WIDTH;
-			gSpriteClips[i].h = BUTTON_HEIGHT;
-		}
+		cout << "Failed to load up texture!" << endl;
+		success = false;
+	}
 
-		//Set buttons in corners
-		gButtons[0].setPosition(0, 0);
-		gButtons[1].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, 0);
-		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
-		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
+	//Load down texture
+	if (!gDownTexture.loadFromFile(path + "down.png"))
+	{
+		cout << "Failed to load down texture!" << endl;
+		success = false;
+	}
+
+	//Load left texture
+	if (!gLeftTexture.loadFromFile(path + "left.png"))
+	{
+		cout << "Failed to load left texture!" << endl;
+		success = false;
+	}
+
+	//Load right texture
+	if (!gRightTexture.loadFromFile(path + "right.png"))
+	{
+		cout << "Failed to load right texture!" << endl;
+		success = false;
 	}
 
 	return success;
@@ -107,7 +121,11 @@ bool loadMedia()
 void close()
 {
 	//Free loaded image
-	gButtonSpriteSheetTexture.free();
+	gPressTexture.free();
+	gUpTexture.free();
+	gDownTexture.free();
+	gLeftTexture.free();
+	gRightTexture.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -142,6 +160,10 @@ int main(int argc, char* args[])
 			//Event handler
 			SDL_Event e;
 
+			//Current rendered texture
+			LTexture* currentTexture = NULL;
+
+
 			//While application is running
 			while (!quit)
 			{
@@ -153,23 +175,37 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
+				}
 
-					//Handle button events
-					for (int i = 0; i < TOTAL_BUTTONS; i++)
-					{
-						gButtons[i].handleEvent(&e);
-					}
+				//Set texture based on current key state
+				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+				if (currentKeyStates[SDL_SCANCODE_UP])
+				{
+					currentTexture = &gUpTexture;
+				}
+				else if (currentKeyStates[SDL_SCANCODE_DOWN])
+				{
+					currentTexture = &gDownTexture;
+				}
+				else if (currentKeyStates[SDL_SCANCODE_LEFT])
+				{
+					currentTexture = &gLeftTexture;
+				}
+				else if (currentKeyStates[SDL_SCANCODE_RIGHT])
+				{
+					currentTexture = &gRightTexture;
+				}
+				else
+				{
+					currentTexture = &gPressTexture;
 				}
 
 				//Clear screen
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render buttons
-				for (int i = 0; i < TOTAL_BUTTONS; i++)
-				{
-					gButtons[i].render();
-				}
+				//Render current texture
+				currentTexture->render(0, 0);
 
 				//Update screen
 				SDL_RenderPresent(gRenderer);
