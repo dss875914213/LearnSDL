@@ -80,20 +80,18 @@ void LTexture::setAlpha(Uint8 alpha)
 	SDL_SetTextureAlphaMod(mTexture, alpha);
 }
 
-void LTexture::render(int x, int y, SDL_Rect* clip)
+void LTexture::render(int x, int y, SDL_Rect* clip/*=NULL*/, double angle/*=0.0*/, SDL_Point* center/*=NULL*/, SDL_RendererFlip flip/*=SDL_FLIP_NONE*/)
 {
 	//Set rendering space and render to screen
 	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
-
 	//Set clip rendering dimensions
 	if (clip != NULL)
 	{
 		renderQuad.w = clip->w;
 		renderQuad.h = clip->h;
 	}
-
 	//Render to screen
-	SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
+	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 }
 
 int LTexture::getWidth()

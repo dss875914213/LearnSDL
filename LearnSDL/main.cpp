@@ -15,10 +15,7 @@ void close();// Frees media and shuts down SDL
 
 SDL_Window* gWindow = NULL;// The window we'll be rendering to
 SDL_Renderer* gRenderer = NULL; // The window renderer
-//Walking animation
-const int WALKING_ANIMATION_FRAMES = 4;
-SDL_Rect gSpriteClips[WALKING_ANIMATION_FRAMES];
-LTexture gSpriteSheetTexture;
+LTexture gArrowTexture;
 
 bool init()
 {
@@ -57,7 +54,7 @@ bool init()
 				int imgFlags = IMG_INIT_PNG;
 				if (!(IMG_Init(imgFlags) & imgFlags))
 				{
-					cout<<"SDL_image could not initialize! SDL_image Error: "<< IMG_GetError()<<endl;
+					cout << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << endl;
 					success = false;
 				}
 			}
@@ -73,33 +70,10 @@ bool loadMedia()
 
 	// Load front alpha texture
 	string path = "../Resource/";
-	if (!gSpriteSheetTexture.loadFromFile(path + "foo.png"))
+	if (!gArrowTexture.loadFromFile(path + "arrow.png"))
 	{
 		cout << "Failed to load front texture!" << endl;
 		success = false;
-	}
-	else
-	{
-		//Set sprite clips
-		gSpriteClips[0].x = 0;
-		gSpriteClips[0].y = 0;
-		gSpriteClips[0].w = 64;
-		gSpriteClips[0].h = 205;
-
-		gSpriteClips[1].x = 64;
-		gSpriteClips[1].y = 0;
-		gSpriteClips[1].w = 64;
-		gSpriteClips[1].h = 205;
-
-		gSpriteClips[2].x = 128;
-		gSpriteClips[2].y = 0;
-		gSpriteClips[2].w = 64;
-		gSpriteClips[2].h = 205;
-
-		gSpriteClips[3].x = 196;
-		gSpriteClips[3].y = 0;
-		gSpriteClips[3].w = 64;
-		gSpriteClips[3].h = 205;
 	}
 
 	return success;
@@ -108,7 +82,7 @@ bool loadMedia()
 void close()
 {
 	//Free loaded image
-	gSpriteSheetTexture.free();
+	gArrowTexture.free();
 
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
@@ -143,8 +117,11 @@ int main(int argc, char* args[])
 			//Event handler
 			SDL_Event e;
 
-			//Current animation frame
-			int frame = 0;
+			//Angle of rotation
+			double degrees = 0;
+
+			//Flip type
+			SDL_RendererFlip flipType = SDL_FLIP_NONE;
 
 			//While application is running
 			while (!quit)
@@ -157,27 +134,38 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
+					else if (e.type == SDL_KEYDOWN)
+					{
+						switch (e.key.keysym.sym)
+						{
+						case SDLK_a:
+							degrees -= 60;
+							break;
+						case SDLK_d:
+							degrees += 60;
+							break;
+						case SDLK_q:
+							flipType = SDL_FLIP_HORIZONTAL;
+							break;
+						case SDLK_w:
+							flipType = SDL_FLIP_NONE;
+							break;
+						case SDLK_e:
+							flipType = SDL_FLIP_VERTICAL;
+							break;
+						}
+					}
 				}
 
 				//Clear screen
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render current frame
-				SDL_Rect* currentClip = &gSpriteClips[frame / 4];
-				gSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
-
+				//Render arrow
+				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
+				
 				//Update screen
 				SDL_RenderPresent(gRenderer);
-
-				//Go to next frame
-				++frame;
-
-				//Cycle animation
-				if (frame / 4 >= WALKING_ANIMATION_FRAMES)
-				{
-					frame = 0;
-				}
 			}
 		}
 	}
