@@ -1,7 +1,7 @@
 #include "LTexture.h"
 
 extern SDL_Renderer* gRenderer;
-
+extern TTF_Font* gFont;
 
 LTexture::LTexture()
 {

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include "SDL/SDL_ttf.h"
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
 using namespace std;
